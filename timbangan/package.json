@@ -1,0 +1,21 @@
+{
+  "name": "timbangan",
+  "version": "1.0.0",
+  "description": "Service untuk menangani data Timbangan",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon ./src/index.js"
+  },
+  "keywords": [],
+  "author": "afdi18",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@hapi/hapi": "^21.3.2",
+    "dotenv": "^16.3.1",
+    "mssql": "^10.0.1"
+  }
+}
