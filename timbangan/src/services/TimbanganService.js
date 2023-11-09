@@ -76,6 +76,20 @@ class TimbanganService {
     }
   }
 
+  async getPemasukanPerShift(hr, ktg) {
+    try {
+      const pool = await sql.connect(config);
+      const data = await pool.request()
+        .query(`SELECT HARI_PEMASUKAN , SUM(CASE SHIFT WHEN 1 THEN RIT ELSE 0 END) AS RITPAGI , (CASE SHIFT WHEN 1 THEN BERAT ELSE 0 END) AS BRTPAGI , SUM(CASE SHIFT WHEN 2 THEN RIT ELSE 0 END) AS RITSIANG , 
+                    SUM(CASE SHIFT WHEN 2 THEN BERAT ELSE 0 END) AS BRTSIANG , SUM(CASE SHIFT WHEN 3 THEN RIT ELSE 0 END) AS RITMALAM , SUM(CASE SHIFT WHEN 3 THEN BERAT ELSE 0 END) AS BRTMALAM , SUM(RIT) AS RITTOT, SUM(BERAT) AS BERATTOT 
+                FROM dbo.V_TAB_PEMASUKAN_PERSHIFT  
+                GROUP BY HARI_PEMASUKAN`);
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
   async getDigilPerjamSpaLolos() {
     try {
       const pool = await sql.connect(config);
@@ -84,6 +98,44 @@ class TimbanganService {
                                                   INNER JOIN tab_register on right( tab_register.id_induk,4)=right(tab_pemasukan_tebu.id_induk,4)
                                                   WHERE not kw_netto is null and no_lori is null and hari_giling is null
                                                   ORDER BY tgl_keluar`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getAntrianLori() {
+    try {
+      const pool = await sql.connect(config);
+      const data = await pool.request()
+        .query(`SELECT dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK, dbo.TAB_PEMASUKAN_TEBU.NO_LORI,BERATSDHR, 
+                    dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, dbo.TAB_REGISTER.KELOMPOK,dbo.TAB_REGISTER.KEBUN, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK, dbo.TAB_PEMASUKAN_TEBU.KW_NETTO, 
+                    RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) AS ID_KTGR,datediff(hour,dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,getdate()) as LAMAJAM 
+                FROM dbo.TAB_PEMASUKAN_TEBU INNER JOIN 
+                    dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN 
+                    dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA 
+                WHERE (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND not (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not  kw_netto IS NULL AND ditolak is null 
+                ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getAntrianTruk() {
+    try {
+      const pool = await sql.connect(config);
+      const data = await pool.request()
+        .query(`SELECT dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK,
+                    dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, dbo.TAB_REGISTER.KELOMPOK,dbo.TAB_REGISTER.KEBUN, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,
+                    RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) AS ID_KTGR,datediff(hour,dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,getdate()) as lamajam
+                FROM dbo.TAB_PEMASUKAN_TEBU INNER JOIN
+                    dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN
+                    dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA
+                WHERE (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not gross is null and  kw_netto IS NULL AND ditolak is null
+                ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
 
       return data.recordset;
     } catch (e) {
