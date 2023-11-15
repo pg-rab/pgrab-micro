@@ -10,6 +10,7 @@ class TimbanganHandler {
     this.getKategoriHandler = this.getKategoriHandler.bind(this);
     this.getPemasukanTebuHandler = this.getPemasukanTebuHandler.bind(this);
     this.getPemasukanKebunHandler = this.getPemasukanKebunHandler.bind(this);
+    this.getPemasukanPerShiftHandler = this.getPemasukanPerShiftHandler.bind(this);
     this.getDigilPerjamSpaLolosHandler =
       this.getDigilPerjamSpaLolosHandler.bind(this);
     this.getAntrianLoriHandler = this.getAntrianLoriHandler.bind(this);
@@ -22,7 +23,7 @@ class TimbanganHandler {
   }
 
   async getHariPemasukanHandler(request, h) {
-    const hariMasuk = await this._service.getHariPemasukan();
+    const data = await this._service.getHariPemasukan();
     return h.response(data);
   }
 
@@ -32,29 +33,27 @@ class TimbanganHandler {
   }
 
   async getPemasukanTebuHandler(request, h) {
-    // try {
     const tgl = request.query.tgl
       ? `WHERE CONVERT(VARCHAR,TGL_MASUK,112)='${request.query.tgl}'`
       : "";
     const limit = request.query.limit
-      ? `TOP ` + request.query.limit
+      ? `TOP ${request.query.limit}`
       : "TOP 100";
-    // console.log(limit)
     const pemasukan = await this._service.getPemasukan(tgl, limit);
-    // console.log(bagian);
     return h.response(pemasukan);
+  }
 
-    // } catch (error) {
-    //     return Boom.internal(error)
-    // }
+  async getPemasukanPerShiftHandler(request, h) {
+    const hari = '';
+    const ktgr = '';
+    const pemasukan = await this._service.getPemasukanPerShift(hari, ktgr);
+    return h.response(pemasukan);
   }
 
   async getPemasukanKebunHandler(request, h) {
     const hr = request.query.harike ? `'${request.query.harike}'` : "";
     const ktg = request.query.kategori ? `'${request.query.kategori}'` : "";
-    // console.log(limit)
     const pemasukan = await this._service.getPemasukanPerKebun(hr, ktg);
-    // console.log(bagian);
     return h.response(pemasukan);
   }
 

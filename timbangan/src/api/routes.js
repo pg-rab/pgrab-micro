@@ -3,22 +3,29 @@ const routes = (handler) => [
     method: "GET",
     path: "/timbangan/pemasukan-tebu",
     handler: handler.getPemasukanTebuHandler,
-    // options: {
-    //   cors: {
-    //     origin: ["http://localhost:8000"],
-    //   },
-    // },
+    /* 
+    options: {
+      cors: {
+        origin: ["http://localhost:8000"],
+      },
+    },
     options: {
       cache: {
         expiresIn: 30 * 1000,
         privacy: "private",
       },
     },
+    */
   },
   {
     method: "GET",
     path: "/timbangan/pemasukan-per-kebun",
     handler: handler.getPemasukanKebunHandler,
+  },
+  {
+    method: "GET",
+    path: "/timbangan/pemasukan-per-shift",
+    handler: handler.getPemasukanPerShiftHandler,
   },
   {
     method: "GET",
@@ -28,12 +35,12 @@ const routes = (handler) => [
   {
     method: "GET",
     path: "/timbangan/antrian-lori",
-    handler: handler.getDigilPerjamSpaLolosHandler,
+    handler: handler.getAntrianLoriHandler,
   },
   {
     method: "GET",
     path: "/timbangan/antrian-truk-tebu",
-    handler: handler.getDigilPerjamSpaLolosHandler,
+    handler: handler.getAntrianTrukHandler,
   },
   {
     method: "GET",
