@@ -4,7 +4,8 @@
   "description": "Service untuk menangani data Timbangan",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon ./src/index.js"
+    "dev": "nodemon ./src/index.js",
+    "prod": "NODE_ENV=production node ./src/index.js"
   },
   "keywords": [],
   "author": "afdi18",
@@ -15,6 +16,7 @@
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@hapi/hapi": "^21.3.2",
+    "auto-bind": "^4.0.0",
     "dotenv": "^16.3.1",
     "mssql": "^10.0.1"
   }

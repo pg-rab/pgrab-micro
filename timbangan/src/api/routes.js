@@ -5,11 +5,6 @@ const routes = (handler) => [
     handler: handler.getPemasukanTebuHandler,
     /* 
     options: {
-      cors: {
-        origin: ["http://localhost:8000"],
-      },
-    },
-    options: {
       cache: {
         expiresIn: 30 * 1000,
         privacy: "private",
@@ -20,42 +15,52 @@ const routes = (handler) => [
   {
     method: "GET",
     path: "/timbangan/pemasukan-per-kebun",
-    handler: handler.getPemasukanKebunHandler,
+    handler: (request, h) => handler.getPemasukanKebunHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/pemasukan-per-kategori",
+    handler: (request, h) => handler.getPemasukanKategoriHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/pemasukan-per-jam",
+    handler: (request, h) => handler.getPemasukanJamHandler(request, h),
   },
   {
     method: "GET",
     path: "/timbangan/pemasukan-per-shift",
-    handler: handler.getPemasukanPerShiftHandler,
+    handler: (request, h) => handler.getPemasukanPerShiftHandler(request, h),
   },
   {
     method: "GET",
     path: "/timbangan/spa-lolos",
-    handler: handler.getDigilPerjamSpaLolosHandler,
+    handler: (request, h) => handler.getDigilPerjamSpaLolosHandler(request, h),
   },
   {
     method: "GET",
     path: "/timbangan/antrian-lori",
-    handler: handler.getAntrianLoriHandler,
+    handler: (request, h) => handler.getAntrianLoriHandler(request, h),
   },
   {
     method: "GET",
     path: "/timbangan/antrian-truk-tebu",
-    handler: handler.getAntrianTrukHandler,
+    handler: (request, h) => handler.getAntrianTrukHandler(request, h),
   },
   {
     method: "GET",
     path: "/timbangan/hari-pemasukan",
-    handler: handler.getHariPemasukanHandler,
+    handler: (request, h) => handler.getHariPemasukanHandler(request, h),
   },
   {
     method: "GET",
     path: "/timbangan/kategori",
-    handler: handler.getKategoriHandler,
+    handler: (request, h) => handler.getKategoriHandler(request, h),
   },
   {
     method: "GET",
     path: "/timbangan/pos",
-    handler: handler.getPosHandler,
+    handler: (request, h) => handler.getPosHandler(request, h),
   },
 ];
 

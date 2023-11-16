@@ -1,20 +1,24 @@
 // const ClientError = require("../../exceptions/ClientError");
 const Boom = require("@hapi/boom");
+const autoBind = require('auto-bind');
 
 class TimbanganHandler {
   constructor(service) {
     this._service = service;
 
-    this.getPosHandler = this.getPosHandler.bind(this);
-    this.getHariPemasukanHandler = this.getHariPemasukanHandler.bind(this);
-    this.getKategoriHandler = this.getKategoriHandler.bind(this);
-    this.getPemasukanTebuHandler = this.getPemasukanTebuHandler.bind(this);
-    this.getPemasukanKebunHandler = this.getPemasukanKebunHandler.bind(this);
-    this.getPemasukanPerShiftHandler = this.getPemasukanPerShiftHandler.bind(this);
-    this.getDigilPerjamSpaLolosHandler =
-      this.getDigilPerjamSpaLolosHandler.bind(this);
-    this.getAntrianLoriHandler = this.getAntrianLoriHandler.bind(this);
-    this.getAntrianTrukHandler = this.getAntrianTrukHandler.bind(this);
+    // this.getPosHandler = this.getPosHandler.bind(this);
+    // this.getHariPemasukanHandler = this.getHariPemasukanHandler.bind(this);
+    // this.getKategoriHandler = this.getKategoriHandler.bind(this);
+    // this.getPemasukanTebuHandler = this.getPemasukanTebuHandler.bind(this);
+    // this.getPemasukanKebunHandler = this.getPemasukanKebunHandler.bind(this);
+    // this.getPemasukanJamHandler = this.getPemasukanJamHandler.bind(this);
+    // this.getPemasukanPerShiftHandler = this.getPemasukanPerShiftHandler.bind(this);
+    // this.getDigilPerjamSpaLolosHandler =
+    //   this.getDigilPerjamSpaLolosHandler.bind(this);
+    // this.getAntrianLoriHandler = this.getAntrianLoriHandler.bind(this);
+    // this.getAntrianTrukHandler = this.getAntrianTrukHandler.bind(this);
+
+    autoBind(this);
   }
 
   async getPosHandler(request, h) {
@@ -43,6 +47,25 @@ class TimbanganHandler {
     return h.response(pemasukan);
   }
 
+  async getPemasukanKebunHandler(request, h) {
+    const hr = request.query.harike ? `'${request.query.harike}'` : "";
+    const ktg = request.query.kategori ? `'${request.query.kategori}'` : "";
+    const pemasukan = await this._service.getPemasukanPerKebun(hr, ktg);
+    return h.response(pemasukan);
+  }
+
+  async getPemasukanKategoriHandler(request, h) {
+    const hr = request.query.harike ? `'${request.query.harike}'` : "";
+    const pemasukan = await this._service.getPemasukanTimbangPerKategori(hr);
+    return h.response(pemasukan);
+  }
+
+  async getPemasukanJamHandler(request, h) {
+    const hr = request.query.harike ? request.query.harike : "";
+    const pemasukan = await this._service.getPemasukanPerJam(hr);
+    return h.response(pemasukan);
+  }
+
   async getPemasukanPerShiftHandler(request, h) {
     const hari = '';
     const ktgr = '';
@@ -50,12 +73,6 @@ class TimbanganHandler {
     return h.response(pemasukan);
   }
 
-  async getPemasukanKebunHandler(request, h) {
-    const hr = request.query.harike ? `'${request.query.harike}'` : "";
-    const ktg = request.query.kategori ? `'${request.query.kategori}'` : "";
-    const pemasukan = await this._service.getPemasukanPerKebun(hr, ktg);
-    return h.response(pemasukan);
-  }
 
   async getDigilPerjamSpaLolosHandler(request, h) {
     const data = await this._service.getDigilPerjamSpaLolos();
