@@ -67,7 +67,9 @@ class TimbanganService {
                   count(case when tab_pemasukan_tebu.hari_pemasukan=${hr} then tab_pemasukan_tebu.hari_pemasukan end) as RIHI,
                   count(case when tab_pemasukan_tebu.hari_pemasukan between '000' and ${hr} then tab_pemasukan_tebu.hari_pemasukan end) as RISDHI,
                   isnull(sum(case when tab_pemasukan_tebu.hari_pemasukan=${hr} then tab_pemasukan_tebu.kw_netto end),0) as BRTHI,
-                  isnull(sum(case when tab_pemasukan_tebu.hari_pemasukan between '000' and ${hr} then tab_pemasukan_tebu.kw_netto end),0) as BRTSDHI
+                  isnull(sum(case when tab_pemasukan_tebu.hari_pemasukan between '000' and ${hr} then tab_pemasukan_tebu.kw_netto end),0) as BRTSDHI,
+                  isnull(sum(case when tab_pemasukan_tebu.hari_pemasukan between '000' and ${hr} then tab_pemasukan_tebu.kw_netto end),0)/TAB_REGISTER.LUAS as KUHA,
+                  ((isnull(sum(case when tab_pemasukan_tebu.hari_pemasukan between '000' and ${hr} then tab_pemasukan_tebu.kw_netto end),0)/TAB_REGISTER.LUAS/TAB_REGISTER.TASAKSI)*100) as PROSEN,
                 FROM TAB_PEMASUKAN_TEBU
                 INNER JOIN  TAB_REGISTER on TAB_PEMASUKAN_TEBU.ID_INDUK=TAB_REGISTER.ID_INDUK
                 WHERE right(left(TAB_REGISTER.id_induk,8),3)=${ktg}
