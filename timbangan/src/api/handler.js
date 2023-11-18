@@ -56,7 +56,7 @@ class TimbanganHandler {
 
   async getPemasukanKategoriHandler(request, h) {
     const hr = request.query.harike ? `'${request.query.harike}'` : "";
-    const pemasukan = await this._service.getPemasukanTimbangPerKategori(hr);
+    const pemasukan = await this._service.getPemasukanPerKategori(hr);
     return h.response(pemasukan);
   }
 
