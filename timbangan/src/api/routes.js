@@ -29,6 +29,11 @@ const routes = (handler) => [
   },
   {
     method: "GET",
+    path: "/timbangan/pemasukan-pos-per-jam",
+    handler: (request, h) => handler.getPemasukanPosJamHandler(request, h),
+  },
+  {
+    method: "GET",
     path: "/timbangan/pemasukan-per-shift",
     handler: (request, h) => handler.getPemasukanPerShiftHandler(request, h),
   },

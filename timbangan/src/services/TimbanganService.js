@@ -80,6 +80,23 @@ class TimbanganService {
     }
   }
 
+  async getPemasukanPerKategori(hr) {
+    try {
+      // let filter = (hr != null) ? 'WHERE ' : '';
+      // filter += (hr != null) ? `(HARI_PEMASUKAN = ${hr})` : '';
+
+      const data = await this._pool.request()
+        .query(`SELECT A.KTGR, B.JMLRIT AS JMLRITGAWANG, A.JMLRIT, A.JMLBERAT, A.HARI_PEMASUKAN
+                FROM   dbo.V_BERAT_KATEGORI AS A,  dbo.V_DATA_ANTRIAN_POSGAWANG AS B
+                WHERE A.KTGR=B.KTGR AND (A.HARI_PEMASUKAN=${hr}) AND (B.HARI_MASUK=${hr})
+                ORDER BY A.KTGR`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
   async getPemasukanPerJam(hr) {
     try {
       const data = await this._pool.request()
@@ -105,6 +122,46 @@ class TimbanganService {
                     SUM(CASE SHIFT WHEN 2 THEN BERAT ELSE 0 END) AS BRTSIANG , SUM(CASE SHIFT WHEN 3 THEN RIT ELSE 0 END) AS RITMALAM , SUM(CASE SHIFT WHEN 3 THEN BERAT ELSE 0 END) AS BRTMALAM , SUM(RIT) AS RITTOT, SUM(BERAT) AS BERATTOT 
                 FROM dbo.V_TAB_PEMASUKAN_PERSHIFT  
                 GROUP BY HARI_PEMASUKAN`);
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getPemasukanPosPerJam(hr = null, ktg = null, jm = null) {
+    let filter = '';
+    if (hr != null || ktg != null || jm != null) {
+      filter = ' WHERE ';
+      if (hr != null) {
+        filter += `(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.HARI_MASUK = '${hr}') `;
+        if (ktg != null || jm != null) {
+          filter += ' AND ';
+        }
+      }
+      if (ktg != null) {
+        filter += `(RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 8), 3) = ${ktg}) `;
+        if (jm != null) {
+          filter += ' AND ';
+        }
+      }
+      if (jm != null) {
+        filter += `({ fn HOUR(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.TGL_MASUK) } = ${jm}) `;
+      }
+    }
+    else {
+      filter += `WHERE NOT HARI_MASUK IS NULL`
+    }
+
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.HARI_MASUK, { fn HOUR(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.TGL_MASUK) } AS JAM, 
+                        RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 8), 3) AS ktgr, RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 10), 1) AS pos, dbo.TAB_POS.NAMA, 
+                        COUNT(RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 10), 1)) AS rit
+                FROM   dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA RIGHT OUTER JOIN
+                        dbo.TAB_POS ON dbo.TAB_POS.ID_POS = RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 10), 5)
+                ${filter}
+                GROUP BY dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.HARI_MASUK, RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 8), 3), 
+                        RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 10), 1), { fn HOUR(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.TGL_MASUK) }, dbo.TAB_POS.NAMA`);
       return data.recordset;
     } catch (e) {
       throw Boom.internal(e);
@@ -162,22 +219,6 @@ class TimbanganService {
     }
   }
 
-  async getPemasukanPerKategori(hr) {
-    try {
-      // let filter = (hr != null) ? 'WHERE ' : '';
-      // filter += (hr != null) ? `(HARI_PEMASUKAN = ${hr})` : '';
-
-      const data = await this._pool.request()
-        .query(`SELECT A.KTGR, B.JMLRIT AS JMLRITGAWANG, A.JMLRIT, A.JMLBERAT, A.HARI_PEMASUKAN
-                FROM   dbo.V_BERAT_KATEGORI AS A,  dbo.V_DATA_ANTRIAN_POSGAWANG AS B
-                WHERE A.KTGR=B.KTGR AND (A.HARI_PEMASUKAN=${hr}) AND (B.HARI_MASUK=${hr})
-                ORDER BY A.KTGR`);
-
-      return data.recordset;
-    } catch (e) {
-      throw Boom.internal(e);
-    }
-  }
 
   // async getPemasukan(tg,lim) {
 

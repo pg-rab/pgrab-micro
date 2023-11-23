@@ -66,13 +66,20 @@ class TimbanganHandler {
     return h.response(pemasukan);
   }
 
+  async getPemasukanPosJamHandler(request, h) {
+    const hr = request.query.harike ? request.query.harike : null;
+    const ktg = request.query.kategori ? request.query.kategori : null;
+    const jm = request.query.jam ? request.query.jam : null;
+    const pemasukan = await this._service.getPemasukanPosPerJam(hr, ktg, jm);
+    return h.response(pemasukan);
+  }
+
   async getPemasukanPerShiftHandler(request, h) {
     const hari = '';
     const ktgr = '';
     const pemasukan = await this._service.getPemasukanPerShift(hari, ktgr);
     return h.response(pemasukan);
   }
-
 
   async getDigilPerjamSpaLolosHandler(request, h) {
     const data = await this._service.getDigilPerjamSpaLolos();
