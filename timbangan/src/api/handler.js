@@ -75,9 +75,7 @@ class TimbanganHandler {
   }
 
   async getPemasukanPerShiftHandler(request, h) {
-    const hari = '';
-    const ktgr = '';
-    const pemasukan = await this._service.getPemasukanPerShift(hari, ktgr);
+    const pemasukan = await this._service.getPemasukanPerShift();
     return h.response(pemasukan);
   }
 

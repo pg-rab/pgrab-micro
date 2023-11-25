@@ -115,12 +115,13 @@ class TimbanganService {
     }
   }
 
-  async getPemasukanPerShift(hr, ktg) {
+  async getPemasukanPerShift() {
     try {
       const data = await this._pool.request()
-        .query(`SELECT HARI_PEMASUKAN , SUM(CASE SHIFT WHEN 1 THEN RIT ELSE 0 END) AS RITPAGI , (CASE SHIFT WHEN 1 THEN BERAT ELSE 0 END) AS BRTPAGI , SUM(CASE SHIFT WHEN 2 THEN RIT ELSE 0 END) AS RITSIANG , 
-                    SUM(CASE SHIFT WHEN 2 THEN BERAT ELSE 0 END) AS BRTSIANG , SUM(CASE SHIFT WHEN 3 THEN RIT ELSE 0 END) AS RITMALAM , SUM(CASE SHIFT WHEN 3 THEN BERAT ELSE 0 END) AS BRTMALAM , SUM(RIT) AS RITTOT, SUM(BERAT) AS BERATTOT 
-                FROM dbo.V_TAB_PEMASUKAN_PERSHIFT  
+        .query(`SELECT  HARI_PEMASUKAN, SUM(CASE SHIFT WHEN 1 THEN RIT ELSE 0 END) AS RITPAGI, SUM(CASE SHIFT WHEN 1 THEN BERAT ELSE 0 END) AS BRTPAGI, 
+                        SUM(CASE SHIFT WHEN 2 THEN RIT ELSE 0 END) AS RITSIANG, SUM(CASE SHIFT WHEN 2 THEN BERAT ELSE 0 END) AS BRTSIANG, SUM(CASE SHIFT WHEN 3 THEN RIT ELSE 0 END) 
+                        AS RITMALAM, SUM(CASE SHIFT WHEN 3 THEN BERAT ELSE 0 END) AS BRTMALAM, SUM(RIT) AS RITTOT, SUM(BERAT) AS BERATTOT
+                FROM    dbo.V_TAB_PEMASUKAN_PERSHIFT
                 GROUP BY HARI_PEMASUKAN`);
       return data.recordset;
     } catch (e) {
@@ -162,6 +163,19 @@ class TimbanganService {
                 ${filter}
                 GROUP BY dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.HARI_MASUK, RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 8), 3), 
                         RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 10), 1), { fn HOUR(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.TGL_MASUK) }, dbo.TAB_POS.NAMA`);
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getPemasukanPerSkw(hr, ktg) {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT HARI_PEMASUKAN , SUM(CASE SHIFT WHEN 1 THEN RIT ELSE 0 END) AS RITPAGI , (CASE SHIFT WHEN 1 THEN BERAT ELSE 0 END) AS BRTPAGI , SUM(CASE SHIFT WHEN 2 THEN RIT ELSE 0 END) AS RITSIANG , 
+                      SUM(CASE SHIFT WHEN 2 THEN BERAT ELSE 0 END) AS BRTSIANG , SUM(CASE SHIFT WHEN 3 THEN RIT ELSE 0 END) AS RITMALAM , SUM(CASE SHIFT WHEN 3 THEN BERAT ELSE 0 END) AS BRTMALAM , SUM(RIT) AS RITTOT, SUM(BERAT) AS BERATTOT 
+                  FROM dbo.V_TAB_PEMASUKAN_PERSHIFT  
+                  GROUP BY HARI_PEMASUKAN`);
       return data.recordset;
     } catch (e) {
       throw Boom.internal(e);
