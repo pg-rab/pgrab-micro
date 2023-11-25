@@ -39,6 +39,11 @@ const routes = (handler) => [
   },
   {
     method: "GET",
+    path: "/timbangan/pemasukan-per-skw",
+    handler: (request, h) => handler.getPemasukanPerSkwHandler(request, h),
+  },
+  {
+    method: "GET",
     path: "/timbangan/spa-lolos",
     handler: (request, h) => handler.getDigilPerjamSpaLolosHandler(request, h),
   },

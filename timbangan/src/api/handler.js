@@ -6,18 +6,6 @@ class TimbanganHandler {
   constructor(service) {
     this._service = service;
 
-    // this.getPosHandler = this.getPosHandler.bind(this);
-    // this.getHariPemasukanHandler = this.getHariPemasukanHandler.bind(this);
-    // this.getKategoriHandler = this.getKategoriHandler.bind(this);
-    // this.getPemasukanTebuHandler = this.getPemasukanTebuHandler.bind(this);
-    // this.getPemasukanKebunHandler = this.getPemasukanKebunHandler.bind(this);
-    // this.getPemasukanJamHandler = this.getPemasukanJamHandler.bind(this);
-    // this.getPemasukanPerShiftHandler = this.getPemasukanPerShiftHandler.bind(this);
-    // this.getDigilPerjamSpaLolosHandler =
-    //   this.getDigilPerjamSpaLolosHandler.bind(this);
-    // this.getAntrianLoriHandler = this.getAntrianLoriHandler.bind(this);
-    // this.getAntrianTrukHandler = this.getAntrianTrukHandler.bind(this);
-
     autoBind(this);
   }
 
@@ -48,20 +36,20 @@ class TimbanganHandler {
   }
 
   async getPemasukanKebunHandler(request, h) {
-    const hr = request.query.harike ? `'${request.query.harike}'` : "";
-    const ktg = request.query.kategori ? `'${request.query.kategori}'` : "";
+    const hr = request.query.harike ? `'${request.query.harike}'` : null;
+    const ktg = request.query.kategori ? `'${request.query.kategori}'` : null;
     const pemasukan = await this._service.getPemasukanPerKebun(hr, ktg);
     return h.response(pemasukan);
   }
 
   async getPemasukanKategoriHandler(request, h) {
-    const hr = request.query.harike ? `'${request.query.harike}'` : "";
+    const hr = request.query.harike ? `'${request.query.harike}'` : null;
     const pemasukan = await this._service.getPemasukanPerKategori(hr);
     return h.response(pemasukan);
   }
 
   async getPemasukanJamHandler(request, h) {
-    const hr = request.query.harike ? request.query.harike : "";
+    const hr = request.query.harike ? request.query.harike : null;
     const pemasukan = await this._service.getPemasukanPerJam(hr);
     return h.response(pemasukan);
   }
@@ -76,6 +64,13 @@ class TimbanganHandler {
 
   async getPemasukanPerShiftHandler(request, h) {
     const pemasukan = await this._service.getPemasukanPerShift();
+    return h.response(pemasukan);
+  }
+
+  async getPemasukanPerSkwHandler(request, h) {
+    const hr = request.query.harike ? `'${request.query.harike}'` : null;
+    const ktg = request.query.kategori ? `'${request.query.kategori}'` : null;
+    const pemasukan = await this._service.getPemasukanPerSkw(hr, ktg);
     return h.response(pemasukan);
   }
 

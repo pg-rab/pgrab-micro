@@ -171,11 +171,17 @@ class TimbanganService {
 
   async getPemasukanPerSkw(hr, ktg) {
     try {
+      const hrYl = (parseInt(hr) < 10) ? `0${parseInt(hr)}` : `${parseInt(hr)}`;
       const data = await this._pool.request()
-        .query(`SELECT HARI_PEMASUKAN , SUM(CASE SHIFT WHEN 1 THEN RIT ELSE 0 END) AS RITPAGI , (CASE SHIFT WHEN 1 THEN BERAT ELSE 0 END) AS BRTPAGI , SUM(CASE SHIFT WHEN 2 THEN RIT ELSE 0 END) AS RITSIANG , 
-                      SUM(CASE SHIFT WHEN 2 THEN BERAT ELSE 0 END) AS BRTSIANG , SUM(CASE SHIFT WHEN 3 THEN RIT ELSE 0 END) AS RITMALAM , SUM(CASE SHIFT WHEN 3 THEN BERAT ELSE 0 END) AS BRTMALAM , SUM(RIT) AS RITTOT, SUM(BERAT) AS BERATTOT 
-                  FROM dbo.V_TAB_PEMASUKAN_PERSHIFT  
-                  GROUP BY HARI_PEMASUKAN`);
+        .query(`SELECT  LEFT(dbo.TAB_TAKMAR_POTENSI_SKW.ID, 4) AS ktgr, dbo.TAB_SKW.ID_SKW, dbo.TAB_SKW.NAMA, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_pemasukan = '${hrYl}' AND 
+                        RIGHT(LEFT(TAB_PEMASUKAN_TEBU.id_induk, 8), 3) = ${ktg} THEN TAB_SKW.id_skw END) AS rityl, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_pemasukan = ${hr} AND 
+                        RIGHT(LEFT(TAB_PEMASUKAN_TEBU.id_induk, 8), 3) = ${ktg} THEN TAB_SKW.id_skw END) AS rithi, dbo.TAB_TAKMAR_POTENSI_SKW.TAKMAR, dbo.TAB_TAKMAR_POTENSI_SKW.POTENSI, 
+                        ISNULL(SUM(CASE WHEN (TAB_PEMASUKAN_TEBU.hari_pemasukan BETWEEN '000' AND ${hr}) AND RIGHT(LEFT(TAB_PEMASUKAN_TEBU.id_induk, 8), 3) = ${ktg} THEN TAB_PEMASUKAN_TEBU.kw_netto END), 0) AS berat
+                FROM    dbo.TAB_PEMASUKAN_TEBU LEFT OUTER JOIN
+                        dbo.TAB_SKW ON dbo.TAB_SKW.ID_SKW = RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 4), 2) LEFT OUTER JOIN
+                        dbo.TAB_TAKMAR_POTENSI_SKW ON dbo.TAB_TAKMAR_POTENSI_SKW.SKW = RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 4), 2)
+                WHERE   (RIGHT(LEFT(dbo.TAB_TAKMAR_POTENSI_SKW.ID, 4), 3) = ${ktg})
+                GROUP BY dbo.TAB_TAKMAR_POTENSI_SKW.ID, dbo.TAB_SKW.NAMA, dbo.TAB_SKW.ID_SKW, dbo.TAB_TAKMAR_POTENSI_SKW.TAKMAR, dbo.TAB_TAKMAR_POTENSI_SKW.POTENSI`);
       return data.recordset;
     } catch (e) {
       throw Boom.internal(e);
