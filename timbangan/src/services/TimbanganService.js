@@ -4,13 +4,28 @@ const Boom = require("@hapi/boom");
 
 class TimbanganService {
   constructor() {
-    // this._pool = new ConnectionPool(config);
     this._pool;
     this.poolConnect();
   }
 
   async poolConnect() {
     this._pool = await connect(config);
+  }
+
+  async getDefaultSet() {
+    try {
+      const data = await this._pool
+        .request()
+        .query(`SELECT NM_DEFAULT, NO_URUT, TGL_HARIAN, NO_ANALISA_M0, NO_ANALISA_M1, NO_ANALISA_M2, NO_ANALISA_M3, NO_ANALISA_M4, HARI_PEMASUKAN, HARI_GILING, JAM_RESET, 
+                       JAM_TRANSFER, TGL_LAP, TGL_AWAL_PEMASUKAN, TGL_AWAL_GILING, MINUS_PEMASUKAN, FAKTOR_RENDEMEN, SUB_ZPK, POT_TERBAKAR, CETAK_HARI_PEMASUKAN, 
+                       CETAK_HARI_GILING, DITASIR, POTONGAN, JML_LORI, JML_MANDOR, PERIODE, NPP, HKUNDIAN, RAF_PERSEN, RAFAKSI, RAF_DADUK, RAF_PUCUK, RAF_SOGOL, RAF_DPS, UMATR, 
+                       BERAT_RIT, TGL, TAMBAH_JAM, TGL_STGIL, MAX_HARGA_TEBU, RTETES, RGULA, HRGGULA, HRGTTS, BIAYAFC, BIAYAVC, GENAP, KASIE, BRTLORI, COFM, ORPABRIK, KSPA
+                FROM   dbo.TAB_DEFAULT
+                WHERE  (NM_DEFAULT = 'setting1')`);
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
   }
 
   async getKategori() {
@@ -41,6 +56,19 @@ class TimbanganService {
         .request()
         .query(
           `SELECT HARI_PEMASUKAN FROM [TIMBANGAN].[dbo].[TAB_PEMASUKAN_TEBU] GROUP BY HARI_PEMASUKAN ORDER BY HARI_PEMASUKAN DESC`
+        );
+      return hari.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getHariGiling() {
+    try {
+      const hari = await this._pool
+        .request()
+        .query(
+          `SELECT HARI_GILING FROM TAB_PEMASUKAN_TEBU GROUP BY HARI_GILING ORDER BY HARI_GILING DESC"`
         );
       return hari.recordset;
     } catch (e) {
@@ -188,6 +216,151 @@ class TimbanganService {
     }
   }
 
+  async getPemasukanPosGawang(hr, ktg) {
+    try {
+      const hrYl = (parseInt(hr) < 10) ? `0${parseInt(hr)}` : `${parseInt(hr)}`;
+      const data = await this._pool.request()
+        .query(`SELECT  LEFT(dbo.TAB_TAKMAR_POTENSI_SKW.ID, 4) AS ktgr, dbo.TAB_SKW.ID_SKW, dbo.TAB_SKW.NAMA, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_pemasukan = '${hrYl}' AND 
+                        RIGHT(LEFT(TAB_PEMASUKAN_TEBU.id_induk, 8), 3) = ${ktg} THEN TAB_SKW.id_skw END) AS rityl, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_pemasukan = ${hr} AND 
+                        RIGHT(LEFT(TAB_PEMASUKAN_TEBU.id_induk, 8), 3) = ${ktg} THEN TAB_SKW.id_skw END) AS rithi, dbo.TAB_TAKMAR_POTENSI_SKW.TAKMAR, dbo.TAB_TAKMAR_POTENSI_SKW.POTENSI, 
+                        ISNULL(SUM(CASE WHEN (TAB_PEMASUKAN_TEBU.hari_pemasukan BETWEEN '000' AND ${hr}) AND RIGHT(LEFT(TAB_PEMASUKAN_TEBU.id_induk, 8), 3) = ${ktg} THEN TAB_PEMASUKAN_TEBU.kw_netto END), 0) AS berat
+                FROM    dbo.TAB_PEMASUKAN_TEBU LEFT OUTER JOIN
+                        dbo.TAB_SKW ON dbo.TAB_SKW.ID_SKW = RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 4), 2) LEFT OUTER JOIN
+                        dbo.TAB_TAKMAR_POTENSI_SKW ON dbo.TAB_TAKMAR_POTENSI_SKW.SKW = RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 4), 2)
+                WHERE   (RIGHT(LEFT(dbo.TAB_TAKMAR_POTENSI_SKW.ID, 4), 3) = ${ktg})
+                GROUP BY dbo.TAB_TAKMAR_POTENSI_SKW.ID, dbo.TAB_SKW.NAMA, dbo.TAB_SKW.ID_SKW, dbo.TAB_TAKMAR_POTENSI_SKW.TAKMAR, dbo.TAB_TAKMAR_POTENSI_SKW.POTENSI`);
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getDigilPerJam(hr) {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT HARI_GILING,URUT,JAM, COUNT(CASE WHEN MEJA > 4 THEN MEJA  END) AS RITGB, 
+                    isnull(SUM(CASE WHEN MEJA > 4 THEN KW_NETTO END),0) AS BRTGB, 	
+                  COUNT(CASE WHEN MEJA < 5 THEN MEJA  END) AS RITGT, 
+                  isnull(SUM(CASE WHEN MEJA < 5 THEN KW_NETTO  END),0) AS BRTGT, 
+                  count(CASE WHEN isnull(no_lori,0)=0  THEN isnull(no_lori,0)  END) AS RITTRUK, 	
+                  SUM(CASE WHEN isnull(no_lori,0)=0  THEN KW_NETTO ELSE 0  END) AS BRTTRUK, 
+                  count(CASE WHEN isnull(no_lori,0)<>0  THEN isnull(no_lori,0)  END) AS RITLORI, 	
+                  SUM(CASE WHEN isnull(no_lori,0)<>0  THEN KW_NETTO ELSE 0  END) AS BRTLORI, 		
+                  count(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=561  OR RIGHT(LEFT(ID_INDUK,8),3)=562 THEN RIGHT(LEFT(ID_INDUK,8),3)  END) AS RITTS, 	
+                  isnull(SUM(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=561  OR RIGHT(LEFT(ID_INDUK,8),3)=562 THEN KW_NETTO  END),0) AS BRTTS, 
+                  isnull(SUM(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=561  OR RIGHT(LEFT(ID_INDUK,8),3)=562 THEN HABLUR   END),0) AS HRTS, 
+                  count(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=541  OR RIGHT(LEFT(ID_INDUK,8),3)=542 THEN RIGHT(LEFT(ID_INDUK,8),3)  END) AS RITTRKA, 	
+                  isnull(SUM(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=541  OR RIGHT(LEFT(ID_INDUK,8),3)=542 THEN KW_NETTO   END),0) AS BRTTRKA, 
+                  isnull(SUM(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=541  OR RIGHT(LEFT(ID_INDUK,8),3)=542 THEN HABLUR    END),0) AS HRTRKA, 
+                  count(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=400 THEN RIGHT(LEFT(ID_INDUK,8),3)  END) AS RITKBD, 	
+                  isnull(SUM(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=400   THEN KW_NETTO END),0) AS BRTKBD, 
+                  isnull(SUM(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=400   THEN HABLUR   END),0) AS HRKBD, 
+                  count(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=566 THEN RIGHT(LEFT(ID_INDUK,8),3)  END) AS RITTRKB, 	
+                  isnull(SUM(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=566   THEN KW_NETTO  END),0) AS BRTTRKB, 	
+                  isnull(SUM(CASE WHEN RIGHT(LEFT(ID_INDUK,8),3)=566   THEN HABLUR  END),0) AS HRTRKB, 
+                  COUNT(HARI_GILING  ) AS RIT, 
+                  SUM(KW_NETTO ) AS BRT, 
+                  SUM(ISNULL(hablur,0) ) AS HR, 
+                  (SUM(ISNULL(hablur,0) )/SUM(KW_NETTO ))*100 AS rend 
+                FROM dbo.V_DATA_ANALISA_NPP_PER_SPA 
+                WHERE HARI_GILING = ${hr} 
+                GROUP BY HARI_GILING,URUT,JAM ORDER BY URUT`);
+
+
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getDigil(hr) {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT KATEGORI, JML_RIT, JML_BERAT, HARI_GILING
+      FROM   dbo.V_DATA_BERAT_DIGILING_PERKATEGORI_KODE_TOTAL
+      WHERE  (HARI_GILING = ${hr})`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getDigilPerShift(hr) {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT dbo.TAB_KATAGORI.NO, dbo.TAB_KATAGORI.KDJML, dbo.TAB_KATAGORI.ID_KATEGORI, dbo.TAB_POS.NAMA AS nmpos, dbo.TAB_KATAGORI.NAMA AS nmktg, 
+                        dbo.TAB_POS.KDJPOS, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN id_kategori END) AS jrit, 
+                        ISNULL(SUM(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN TAB_PEMASUKAN_TEBU.kw_netto END), 0) AS jberat, 
+                        ISNULL(SUM(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN V_DATA_ANALISA_NPP_PER_SPA.hablur END), 0) AS jhablur
+                FROM  dbo.TAB_PEMASUKAN_TEBU INNER JOIN
+                        dbo.TAB_KATAGORI ON dbo.TAB_KATAGORI.ID_KATEGORI = RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) LEFT OUTER JOIN
+                        dbo.TAB_POS ON dbo.TAB_POS.ID_POS = LEFT(RIGHT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 10), 5) LEFT OUTER JOIN
+                        dbo.V_DATA_ANALISA_NPP_PER_SPA ON dbo.V_DATA_ANALISA_NPP_PER_SPA.SPA = dbo.TAB_PEMASUKAN_TEBU.SPA
+                GROUP BY dbo.TAB_KATAGORI.NO, dbo.TAB_KATAGORI.ID_KATEGORI, dbo.TAB_POS.NAMA, dbo.TAB_KATAGORI.KDJML, dbo.TAB_KATAGORI.NAMA, dbo.TAB_POS.KDJPOS
+                ORDER BY dbo.TAB_KATAGORI.NO, dbo.TAB_POS.KDJPOS`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getAntrianLori() {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK, dbo.TAB_PEMASUKAN_TEBU.NO_LORI,BERATSDHR, 
+      dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, dbo.TAB_REGISTER.KELOMPOK,dbo.TAB_REGISTER.KEBUN, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK, dbo.TAB_PEMASUKAN_TEBU.KW_NETTO, 
+      RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) AS ID_KTGR,datediff(hour,dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,getdate()) as LAMAJAM 
+      FROM dbo.TAB_PEMASUKAN_TEBU INNER JOIN 
+      dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN 
+      dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA 
+      WHERE (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND not (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not  kw_netto IS NULL AND ditolak is null 
+      ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getAntrianTruk() {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK,
+                  dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, dbo.TAB_REGISTER.KELOMPOK,dbo.TAB_REGISTER.KEBUN, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,
+                  RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) AS ID_KTGR,datediff(hour,dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,getdate()-100) as lamajam
+                FROM dbo.TAB_PEMASUKAN_TEBU INNER JOIN
+                  dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN
+                  dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA
+                WHERE (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not gross is null and  kw_netto IS NULL AND ditolak is null
+                ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getSpaDitolak() {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT  dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK,
+                        dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, dbo.TAB_REGISTER.KELOMPOK, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,
+                        RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) AS ID_KTGR
+                FROM    dbo.TAB_PEMASUKAN_TEBU INNER JOIN
+                        dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN
+                        dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA
+                        WHERE   (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL)  AND not ditolak is null
+                ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
   async getDigilPerjamSpaLolos() {
     try {
       const data = await this._pool.request()
@@ -203,17 +376,30 @@ class TimbanganService {
     }
   }
 
-  async getAntrianLori() {
+  async getLamaTinggalTruk() {
     try {
       const data = await this._pool.request()
-        .query(`SELECT dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK, dbo.TAB_PEMASUKAN_TEBU.NO_LORI,BERATSDHR, 
-                    dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, dbo.TAB_REGISTER.KELOMPOK,dbo.TAB_REGISTER.KEBUN, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK, dbo.TAB_PEMASUKAN_TEBU.KW_NETTO, 
-                    RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) AS ID_KTGR,datediff(hour,dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,getdate()) as LAMAJAM 
-                FROM dbo.TAB_PEMASUKAN_TEBU INNER JOIN 
-                    dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN 
-                    dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA 
-                WHERE (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND not (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not  kw_netto IS NULL AND ditolak is null 
-                ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
+        .query(`SELECT HARI_PEMASUKAN , COUNT(CASE WHEN SHIFT = 1 AND DATEDIFF(hour,tgl_masuk,tgl_keluar)<=2 THEN SHIFT END) AS PGRIT2, 
+                  COUNT(CASE WHEN SHIFT = 1 AND (DATEDIFF(hour,tgl_masuk,tgl_keluar)>2 and DATEDIFF(hour,tgl_masuk,tgl_keluar)<=4)  THEN SHIFT END) AS PGRIT24, 
+                  COUNT(CASE WHEN SHIFT = 1 AND (DATEDIFF(hour,tgl_masuk,tgl_keluar)>4 and DATEDIFF(hour,tgl_masuk,tgl_keluar)<=6)   THEN SHIFT END) AS PGRIT4, 
+                  COUNT(CASE WHEN SHIFT = 1 AND DATEDIFF(hour,tgl_masuk,tgl_keluar)>6   THEN SHIFT END) AS PGRIT6, 
+                  COUNT(CASE WHEN SHIFT = 2 AND DATEDIFF(hour,tgl_masuk,tgl_keluar)<=2 THEN SHIFT END) AS SGRIT2, 
+                  COUNT(CASE WHEN SHIFT = 2 AND (DATEDIFF(hour,tgl_masuk,tgl_keluar)>2 and DATEDIFF(hour,tgl_masuk,tgl_keluar)<=4)  THEN SHIFT END) AS SGRIT24, 
+                  COUNT(CASE WHEN SHIFT = 2 AND (DATEDIFF(hour,tgl_masuk,tgl_keluar)>4 and DATEDIFF(hour,tgl_masuk,tgl_keluar)<=6)   THEN SHIFT END) AS SGRIT4, 
+                  COUNT(CASE WHEN SHIFT = 2 AND DATEDIFF(hour,tgl_masuk,tgl_keluar)>6   THEN SHIFT END) AS SGRIT6, 
+                  COUNT(CASE WHEN SHIFT = 3 AND DATEDIFF(hour,tgl_masuk,tgl_keluar)<=2 THEN SHIFT END) AS MNRIT2, 
+                  COUNT(CASE WHEN SHIFT = 3 AND (DATEDIFF(hour,tgl_masuk,tgl_keluar)>2 and DATEDIFF(hour,tgl_masuk,tgl_keluar)<=4)  THEN SHIFT END) AS MNRIT24, 
+                  COUNT(CASE WHEN SHIFT = 3 AND (DATEDIFF(hour,tgl_masuk,tgl_keluar)>4 and DATEDIFF(hour,tgl_masuk,tgl_keluar)<=6)   THEN SHIFT END) AS MNRIT4, 
+                  COUNT(CASE WHEN SHIFT = 3 AND DATEDIFF(hour,tgl_masuk,tgl_keluar)>6   THEN SHIFT END) AS MNRIT6, 
+                  COUNT(CASE WHEN DATEDIFF(hour,tgl_masuk,tgl_keluar)<=2 THEN SHIFT END) AS TTRIT2, 
+                  COUNT(CASE WHEN DATEDIFF(hour,tgl_masuk,tgl_keluar)>2 and DATEDIFF(hour,tgl_masuk,tgl_keluar)<=4  THEN SHIFT END) AS TTRIT24, 
+                  COUNT(CASE WHEN DATEDIFF(hour,tgl_masuk,tgl_keluar)>4 and DATEDIFF(hour,tgl_masuk,tgl_keluar)<=6 THEN SHIFT END) AS TTRIT4, 
+                    COUNT(CASE WHEN DATEDIFF(hour,tgl_masuk,tgl_keluar)>6 THEN SHIFT END) AS TTRIT6, 
+                  COUNT(hari_pemasukan) AS TTRIT 
+                FROM TAB_PEMASUKAN_TEBU INNER JOIN TAB_JAM ON JAM=DATEPART(HOUR,TGL_KELUAR) 
+                WHERE NOT KW_NETTO IS NULL  
+                GROUP BY HARI_PEMASUKAN 
+                ORDER BY HARI_PEMASUKAN`);
 
       return data.recordset;
     } catch (e) {
@@ -221,36 +407,7 @@ class TimbanganService {
     }
   }
 
-  async getAntrianTruk() {
-    try {
-      const data = await this._pool.request()
-        .query(`SELECT dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK,
-                    dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, dbo.TAB_REGISTER.KELOMPOK,dbo.TAB_REGISTER.KEBUN, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,
-                    RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) AS ID_KTGR,datediff(hour,dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK,getdate()) as lamajam
-                FROM dbo.TAB_PEMASUKAN_TEBU INNER JOIN
-                    dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN
-                    dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA
-                WHERE (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not gross is null and  kw_netto IS NULL AND ditolak is null
-                ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
 
-      return data.recordset;
-    } catch (e) {
-      throw Boom.internal(e);
-    }
-  }
-
-
-  // async getPemasukan(tg,lim) {
-
-  //   try {
-  //     const pool = await sql.connect(config);
-  //     const pemasukan = await pool.request().query(`SELECT ${lim} SPA,NO_URUT,NO_TRUK,ID_INDUK,GROSS,TARA,NETTO,KW_NETTO,LUAS_TEBANG,NO_LORI,MEJA,TGL_MASUK,TGL_TIMB1,TGL_LORI,TGL_MEJA,TGL_KELUAR,HARI_MASUK,HARI_PEMASUKAN,SHIFT_PEMASUKAN,HARI_GILING,SHIFT_GILING,TGL_LAP,IDTRUK_BC
-  //                                                 FROM [TIMBANGAN].[dbo].[TAB_PEMASUKAN_TEBU] ${tg}`);
-  //     return pemasukan.recordsets;
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
 }
 
 module.exports = TimbanganService;

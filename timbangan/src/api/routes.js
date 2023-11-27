@@ -14,6 +14,21 @@ const routes = (handler) => [
   },
   {
     method: "GET",
+    path: "/timbangan/tebu-digiling",
+    handler: (request, h) => handler.getDigilHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/tebu-digiling-per-jam",
+    handler: (request, h) => handler.getDigilPerJamHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/tebu-digiling-per-shift",
+    handler: (request, h) => handler.getDigilPerShiftHandler(request, h),
+  },
+  {
+    method: "GET",
     path: "/timbangan/pemasukan-per-kebun",
     handler: (request, h) => handler.getPemasukanKebunHandler(request, h),
   },
@@ -71,6 +86,11 @@ const routes = (handler) => [
     method: "GET",
     path: "/timbangan/pos",
     handler: (request, h) => handler.getPosHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/default-setting",
+    handler: (request, h) => handler.getDefaultSetHandler(request, h),
   },
 ];
 

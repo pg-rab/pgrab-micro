@@ -9,6 +9,18 @@ class TimbanganHandler {
     autoBind(this);
   }
 
+  // Handler data Umum 
+
+  async getDefaultSetHandler(request, h) {
+    const data = await this._service.getDefaultSet();
+    return h.response(data);
+  }
+
+  async getKategoriHandler(request, h) {
+    const data = await this._service.getKategori();
+    return h.response(data);
+  }
+
   async getPosHandler(request, h) {
     const data = await this._service.getPos();
     return h.response(data);
@@ -19,10 +31,9 @@ class TimbanganHandler {
     return h.response(data);
   }
 
-  async getKategoriHandler(request, h) {
-    const data = await this._service.getKategori();
-    return h.response(data);
-  }
+  // End Of Handler data Umum 
+
+  // Handler data Tanaman
 
   async getPemasukanTebuHandler(request, h) {
     const tgl = request.query.tgl
@@ -74,10 +85,36 @@ class TimbanganHandler {
     return h.response(pemasukan);
   }
 
+  // End Of Handler data Tanaman
+
+  // Handler data Pabrik
+
+  async getDigilPerJamHandler(request, h) {
+    const hr = request.query.harike ? `'${request.query.harike}'` : null;
+    const data = await this._service.getDigilPerJam(hr);
+    return h.response(data);
+  }
+
+  async getDigilPerShiftHandler(request, h) {
+    const hr = request.query.harike ? `'${request.query.harike}'` : null;
+    const data = await this._service.getDigilPerShift(hr);
+    return h.response(data);
+  }
+
+  async getDigilHandler(request, h) {
+    const hr = request.query.harike ? `'${request.query.harike}'` : null;
+    const data = await this._service.getDigilPerJam(hr);
+    return h.response(data);
+  }
+
   async getDigilPerjamSpaLolosHandler(request, h) {
     const data = await this._service.getDigilPerjamSpaLolos();
     return h.response(data);
   }
+
+  // End Of Handler data Pabrik
+
+  // Handler data ARI
 
   async getAntrianLoriHandler(request, h) {
     const data = await this._service.getAntrianLori();
@@ -88,6 +125,15 @@ class TimbanganHandler {
     const data = await this._service.getAntrianTruk();
     return h.response(data);
   }
+
+  // async getDigilHandler(request, h) {
+  //   const hr = request.query.harike ? `'${request.query.harike}'` : null;
+  //   const data = await this._service.getDigilPerJam(hr);
+  //   return h.response(data);
+  // }
+
+  // End Of Handler data ARI
+
 }
 
 module.exports = TimbanganHandler;
