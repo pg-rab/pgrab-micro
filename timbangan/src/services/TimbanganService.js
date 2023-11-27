@@ -14,8 +14,7 @@ class TimbanganService {
 
   async getDefaultSet() {
     try {
-      const data = await this._pool
-        .request()
+      const data = await this._pool.request()
         .query(`SELECT NM_DEFAULT, NO_URUT, TGL_HARIAN, NO_ANALISA_M0, NO_ANALISA_M1, NO_ANALISA_M2, NO_ANALISA_M3, NO_ANALISA_M4, HARI_PEMASUKAN, HARI_GILING, JAM_RESET, 
                        JAM_TRANSFER, TGL_LAP, TGL_AWAL_PEMASUKAN, TGL_AWAL_GILING, MINUS_PEMASUKAN, FAKTOR_RENDEMEN, SUB_ZPK, POT_TERBAKAR, CETAK_HARI_PEMASUKAN, 
                        CETAK_HARI_GILING, DITASIR, POTONGAN, JML_LORI, JML_MANDOR, PERIODE, NPP, HKUNDIAN, RAF_PERSEN, RAFAKSI, RAF_DADUK, RAF_PUCUK, RAF_SOGOL, RAF_DPS, UMATR, 
@@ -68,7 +67,7 @@ class TimbanganService {
       const hari = await this._pool
         .request()
         .query(
-          `SELECT HARI_GILING FROM TAB_PEMASUKAN_TEBU GROUP BY HARI_GILING ORDER BY HARI_GILING DESC"`
+          `SELECT HARI_GILING FROM [TIMBANGAN].[dbo].[TAB_PEMASUKAN_TEBU] GROUP BY HARI_GILING ORDER BY HARI_GILING DESC`
         );
       return hari.recordset;
     } catch (e) {
@@ -132,7 +131,9 @@ class TimbanganService {
                         RIGHT(LEFT(ID_INDUK, 8), 3) = 562) THEN JAM END) AS RITTS, COUNT(CASE WHEN HARI_MASUK = '${hr}' AND (RIGHT(LEFT(ID_INDUK, 8), 3) = 541 OR
                         RIGHT(LEFT(ID_INDUK, 8), 3) = 542) THEN JAM END) AS RITTRKA, COUNT(CASE WHEN HARI_MASUK = '${hr}' AND RIGHT(LEFT(ID_INDUK, 8), 3) = 400 THEN JAM END) AS RITKBD, 
                         COUNT(CASE WHEN HARI_MASUK = '${hr}' AND RIGHT(LEFT(ID_INDUK, 8), 3) = 566 THEN JAM END) AS RITRKB, COUNT(CASE WHEN HARI_MASUK = '${hr}' THEN RIGHT(LEFT(ID_INDUK, 8), 3) END) 
-                        AS RITHI, COUNT(CASE WHEN CONVERT(int, HARI_MASUK) = '${hr - 1}' THEN JAM END) AS RITYL
+                        AS RITHI, COUNT(CASE WHEN CONVERT(int, HARI_MASUK) = '${
+                          hr - 1
+                        }' THEN JAM END) AS RITYL
                 FROM    dbo.TAB_PEMASUKAN_TEBU LEFT OUTER JOIN
                         dbo.TAB_JAM ON DATEPART(HOUR, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK) = dbo.TAB_JAM.JAM
                 GROUP BY dbo.TAB_JAM.URUT, dbo.TAB_JAM.JAM
@@ -158,27 +159,26 @@ class TimbanganService {
   }
 
   async getPemasukanPosPerJam(hr = null, ktg = null, jm = null) {
-    let filter = '';
+    let filter = "";
     if (hr != null || ktg != null || jm != null) {
-      filter = ' WHERE ';
+      filter = " WHERE ";
       if (hr != null) {
         filter += `(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.HARI_MASUK = '${hr}') `;
         if (ktg != null || jm != null) {
-          filter += ' AND ';
+          filter += " AND ";
         }
       }
       if (ktg != null) {
         filter += `(RIGHT(LEFT(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.ID_INDUK, 8), 3) = ${ktg}) `;
         if (jm != null) {
-          filter += ' AND ';
+          filter += " AND ";
         }
       }
       if (jm != null) {
         filter += `({ fn HOUR(dbo.V_DATA_PEMASUKAN_VS_MASTER_SPA.TGL_MASUK) } = ${jm}) `;
       }
-    }
-    else {
-      filter += `WHERE NOT HARI_MASUK IS NULL`
+    } else {
+      filter += `WHERE NOT HARI_MASUK IS NULL`;
     }
 
     try {
@@ -199,7 +199,7 @@ class TimbanganService {
 
   async getPemasukanPerSkw(hr, ktg) {
     try {
-      const hrYl = (parseInt(hr) < 10) ? `0${parseInt(hr)}` : `${parseInt(hr)}`;
+      const hrYl = parseInt(hr) < 10 ? `0${parseInt(hr)}` : `${parseInt(hr)}`;
       const data = await this._pool.request()
         .query(`SELECT  LEFT(dbo.TAB_TAKMAR_POTENSI_SKW.ID, 4) AS ktgr, dbo.TAB_SKW.ID_SKW, dbo.TAB_SKW.NAMA, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_pemasukan = '${hrYl}' AND 
                         RIGHT(LEFT(TAB_PEMASUKAN_TEBU.id_induk, 8), 3) = ${ktg} THEN TAB_SKW.id_skw END) AS rityl, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_pemasukan = ${hr} AND 
@@ -218,7 +218,7 @@ class TimbanganService {
 
   async getPemasukanPosGawang(hr, ktg) {
     try {
-      const hrYl = (parseInt(hr) < 10) ? `0${parseInt(hr)}` : `${parseInt(hr)}`;
+      const hrYl = parseInt(hr) < 10 ? `0${parseInt(hr)}` : `${parseInt(hr)}`;
       const data = await this._pool.request()
         .query(`SELECT  LEFT(dbo.TAB_TAKMAR_POTENSI_SKW.ID, 4) AS ktgr, dbo.TAB_SKW.ID_SKW, dbo.TAB_SKW.NAMA, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_pemasukan = '${hrYl}' AND 
                         RIGHT(LEFT(TAB_PEMASUKAN_TEBU.id_induk, 8), 3) = ${ktg} THEN TAB_SKW.id_skw END) AS rityl, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_pemasukan = ${hr} AND 
@@ -266,8 +266,6 @@ class TimbanganService {
                 WHERE HARI_GILING = ${hr} 
                 GROUP BY HARI_GILING,URUT,JAM ORDER BY URUT`);
 
-
-
       return data.recordset;
     } catch (e) {
       throw Boom.internal(e);
@@ -295,6 +293,26 @@ class TimbanganService {
                         ISNULL(SUM(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN TAB_PEMASUKAN_TEBU.kw_netto END), 0) AS jberat, 
                         ISNULL(SUM(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN V_DATA_ANALISA_NPP_PER_SPA.hablur END), 0) AS jhablur
                 FROM  dbo.TAB_PEMASUKAN_TEBU INNER JOIN
+                        dbo.TAB_KATAGORI ON dbo.TAB_KATAGORI.ID_KATEGORI = RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) LEFT OUTER JOIN
+                        dbo.TAB_POS ON dbo.TAB_POS.ID_POS = LEFT(RIGHT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 10), 5) LEFT OUTER JOIN
+                        dbo.V_DATA_ANALISA_NPP_PER_SPA ON dbo.V_DATA_ANALISA_NPP_PER_SPA.SPA = dbo.TAB_PEMASUKAN_TEBU.SPA
+                GROUP BY dbo.TAB_KATAGORI.NO, dbo.TAB_KATAGORI.ID_KATEGORI, dbo.TAB_POS.NAMA, dbo.TAB_KATAGORI.KDJML, dbo.TAB_KATAGORI.NAMA, dbo.TAB_POS.KDJPOS
+                ORDER BY dbo.TAB_KATAGORI.NO, dbo.TAB_POS.KDJPOS`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getDigilPerPos(hr) {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT  dbo.TAB_KATAGORI.NO, dbo.TAB_KATAGORI.KDJML, dbo.TAB_KATAGORI.ID_KATEGORI, dbo.TAB_POS.NAMA AS nmpos, dbo.TAB_KATAGORI.NAMA AS nmktg, 
+                        dbo.TAB_POS.KDJPOS, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN id_kategori END) AS jrit, 
+                        ISNULL(SUM(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN TAB_PEMASUKAN_TEBU.kw_netto END), 0) AS jberat, 
+                        ISNULL(SUM(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN V_DATA_ANALISA_NPP_PER_SPA.hablur END), 0) AS jhablur
+                FROM         dbo.TAB_PEMASUKAN_TEBU INNER JOIN
                         dbo.TAB_KATAGORI ON dbo.TAB_KATAGORI.ID_KATEGORI = RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) LEFT OUTER JOIN
                         dbo.TAB_POS ON dbo.TAB_POS.ID_POS = LEFT(RIGHT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 10), 5) LEFT OUTER JOIN
                         dbo.V_DATA_ANALISA_NPP_PER_SPA ON dbo.V_DATA_ANALISA_NPP_PER_SPA.SPA = dbo.TAB_PEMASUKAN_TEBU.SPA
@@ -406,8 +424,6 @@ class TimbanganService {
       throw Boom.internal(e);
     }
   }
-
-
 }
 
 module.exports = TimbanganService;

@@ -1,6 +1,6 @@
 // const ClientError = require("../../exceptions/ClientError");
 const Boom = require("@hapi/boom");
-const autoBind = require('auto-bind');
+const autoBind = require("auto-bind");
 
 class TimbanganHandler {
   constructor(service) {
@@ -9,7 +9,7 @@ class TimbanganHandler {
     autoBind(this);
   }
 
-  // Handler data Umum 
+  // Handler data Umum
 
   async getDefaultSetHandler(request, h) {
     const data = await this._service.getDefaultSet();
@@ -31,7 +31,12 @@ class TimbanganHandler {
     return h.response(data);
   }
 
-  // End Of Handler data Umum 
+  async getHariGilingHandler(request, h) {
+    const data = await this._service.getHariGiling();
+    return h.response(data);
+  }
+
+  // End Of Handler data Umum
 
   // Handler data Tanaman
 
@@ -101,9 +106,15 @@ class TimbanganHandler {
     return h.response(data);
   }
 
+  async getDigilPerPosHandler(request, h) {
+    const hr = request.query.harike ? `'${request.query.harike}'` : null;
+    const data = await this._service.getDigilPerPos(hr);
+    return h.response(data);
+  }
+
   async getDigilHandler(request, h) {
     const hr = request.query.harike ? `'${request.query.harike}'` : null;
-    const data = await this._service.getDigilPerJam(hr);
+    const data = await this._service.getDigil(hr);
     return h.response(data);
   }
 
@@ -126,14 +137,17 @@ class TimbanganHandler {
     return h.response(data);
   }
 
-  // async getDigilHandler(request, h) {
-  //   const hr = request.query.harike ? `'${request.query.harike}'` : null;
-  //   const data = await this._service.getDigilPerJam(hr);
-  //   return h.response(data);
-  // }
+  async getSpaBatalHandler(request, h) {
+    const data = await this._service.getSpaDitolak();
+    return h.response(data);
+  }
+
+  async getLamaTinggalTrukHandler(request, h) {
+    const data = await this._service.getLamaTinggalTruk();
+    return h.response(data);
+  }
 
   // End Of Handler data ARI
-
 }
 
 module.exports = TimbanganHandler;

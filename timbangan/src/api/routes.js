@@ -14,6 +14,26 @@ const routes = (handler) => [
   },
   {
     method: "GET",
+    path: "/timbangan/lama-tinggal-truk",
+    handler: (request, h) => handler.getLamaTinggalTrukHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/spa-batal",
+    handler: (request, h) => handler.getSpaBatalHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/antrian-lori",
+    handler: (request, h) => handler.getAntrianLoriHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/antrian-truk-tebu",
+    handler: (request, h) => handler.getAntrianTrukHandler(request, h),
+  },
+  {
+    method: "GET",
     path: "/timbangan/tebu-digiling",
     handler: (request, h) => handler.getDigilHandler(request, h),
   },
@@ -26,6 +46,11 @@ const routes = (handler) => [
     method: "GET",
     path: "/timbangan/tebu-digiling-per-shift",
     handler: (request, h) => handler.getDigilPerShiftHandler(request, h),
+  },
+  {
+    method: "GET",
+    path: "/timbangan/tebu-digiling-per-pos",
+    handler: (request, h) => handler.getDigilPerPosHandler(request, h),
   },
   {
     method: "GET",
@@ -64,13 +89,8 @@ const routes = (handler) => [
   },
   {
     method: "GET",
-    path: "/timbangan/antrian-lori",
-    handler: (request, h) => handler.getAntrianLoriHandler(request, h),
-  },
-  {
-    method: "GET",
-    path: "/timbangan/antrian-truk-tebu",
-    handler: (request, h) => handler.getAntrianTrukHandler(request, h),
+    path: "/timbangan/hari-giling",
+    handler: (request, h) => handler.getHariGilingHandler(request, h),
   },
   {
     method: "GET",
