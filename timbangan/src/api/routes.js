@@ -41,8 +41,16 @@ const routes = (handler) => [
   },
   {
     method: "GET",
-    path: "/timbangan/antrian-truk-tebu",
-    handler: (request, h) => handler.getAntrianTrukHandler(request, h),
+    path: "/timbangan/antrian-truk-sudah-timbang",
+    handler: (request, h) => handler.getAntrianTrukSdhTimbangHandler(request, h),
+    options: {
+      auth: "timbangan_jwt",
+    },
+  },
+  {
+    method: "GET",
+    path: "/timbangan/antrian-truk-belum-timbang",
+    handler: (request, h) => handler.getAntrianTrukBlmTimbangHandler(request, h),
     options: {
       auth: "timbangan_jwt",
     },

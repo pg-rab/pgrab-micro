@@ -28,10 +28,8 @@ class PetakHandler {
                 },
             };
         } catch (error) {
-            if (error.output.statusCode == 404) {
+            if (Boom.isBoom(error)) {
                 return error;
-            } else if (error.statusCode == 400) {
-                return Boom.badRequest();
             }
 
             // Server ERROR!
@@ -49,10 +47,9 @@ class PetakHandler {
                 message: "Petak berhasil diperbarui",
             };
         } catch (error) {
-            if (error.output.statusCode == 404) {
+            console.log(error);
+            if (Boom.isBoom(error)) {
                 return error;
-            } else if (error.statusCode == 400) {
-                return Boom.badRequest();
             }
 
             // Server ERROR!

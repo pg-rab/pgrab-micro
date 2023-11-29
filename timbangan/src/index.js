@@ -31,6 +31,7 @@ const init = async () => {
       aud: false,
       iss: "RAB_API",
       sub: false,
+      exp: true,
     },
     validate: (artifacts) => ({
       isValid: true,

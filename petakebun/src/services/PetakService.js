@@ -27,8 +27,8 @@ class PetakService {
 
     async editPetakById(id, { rayon, afd, kebun, kelompok, petani, kategori, area, id_kebun, desa }) {
         const query = {
-            text: "UPDATE albums SET name=$1, year=$2 WHEre id=$3 RETURNING id",
-            values: [name, year, id],
+            text: "UPDATE public.ptkdigital1 SET rayon=$2, afd=$3, kebun=$4, kelompok=$5, petani=$6, kategori=$7, area=$8, id_kebun=$9, desa=$10 WHERE id=$1 RETURNING id",
+            values: [id, rayon, afd, kebun, kelompok, petani, kategori, area, id_kebun, desa],
         };
 
         const result = await this._pool.query(query);

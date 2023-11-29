@@ -131,9 +131,8 @@ class TimbanganService {
                         RIGHT(LEFT(ID_INDUK, 8), 3) = 562) THEN JAM END) AS RITTS, COUNT(CASE WHEN HARI_MASUK = '${hr}' AND (RIGHT(LEFT(ID_INDUK, 8), 3) = 541 OR
                         RIGHT(LEFT(ID_INDUK, 8), 3) = 542) THEN JAM END) AS RITTRKA, COUNT(CASE WHEN HARI_MASUK = '${hr}' AND RIGHT(LEFT(ID_INDUK, 8), 3) = 400 THEN JAM END) AS RITKBD, 
                         COUNT(CASE WHEN HARI_MASUK = '${hr}' AND RIGHT(LEFT(ID_INDUK, 8), 3) = 566 THEN JAM END) AS RITRKB, COUNT(CASE WHEN HARI_MASUK = '${hr}' THEN RIGHT(LEFT(ID_INDUK, 8), 3) END) 
-                        AS RITHI, COUNT(CASE WHEN CONVERT(int, HARI_MASUK) = '${
-                          hr - 1
-                        }' THEN JAM END) AS RITYL
+                        AS RITHI, COUNT(CASE WHEN CONVERT(int, HARI_MASUK) = '${hr - 1
+          }' THEN JAM END) AS RITYL
                 FROM    dbo.TAB_PEMASUKAN_TEBU LEFT OUTER JOIN
                         dbo.TAB_JAM ON DATEPART(HOUR, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK) = dbo.TAB_JAM.JAM
                 GROUP BY dbo.TAB_JAM.URUT, dbo.TAB_JAM.JAM
@@ -288,16 +287,16 @@ class TimbanganService {
   async getDigilPerShift(hr) {
     try {
       const data = await this._pool.request()
-        .query(`SELECT dbo.TAB_KATAGORI.NO, dbo.TAB_KATAGORI.KDJML, dbo.TAB_KATAGORI.ID_KATEGORI, dbo.TAB_POS.NAMA AS nmpos, dbo.TAB_KATAGORI.NAMA AS nmktg, 
-                        dbo.TAB_POS.KDJPOS, COUNT(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN id_kategori END) AS jrit, 
-                        ISNULL(SUM(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN TAB_PEMASUKAN_TEBU.kw_netto END), 0) AS jberat, 
-                        ISNULL(SUM(CASE WHEN TAB_PEMASUKAN_TEBU.hari_giling = ${hr} THEN V_DATA_ANALISA_NPP_PER_SPA.hablur END), 0) AS jhablur
-                FROM  dbo.TAB_PEMASUKAN_TEBU INNER JOIN
-                        dbo.TAB_KATAGORI ON dbo.TAB_KATAGORI.ID_KATEGORI = RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) LEFT OUTER JOIN
-                        dbo.TAB_POS ON dbo.TAB_POS.ID_POS = LEFT(RIGHT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 10), 5) LEFT OUTER JOIN
-                        dbo.V_DATA_ANALISA_NPP_PER_SPA ON dbo.V_DATA_ANALISA_NPP_PER_SPA.SPA = dbo.TAB_PEMASUKAN_TEBU.SPA
-                GROUP BY dbo.TAB_KATAGORI.NO, dbo.TAB_KATAGORI.ID_KATEGORI, dbo.TAB_POS.NAMA, dbo.TAB_KATAGORI.KDJML, dbo.TAB_KATAGORI.NAMA, dbo.TAB_POS.KDJPOS
-                ORDER BY dbo.TAB_KATAGORI.NO, dbo.TAB_POS.KDJPOS`);
+        .query(`SELECT HARI_GILING , SUM(CASE SHIFT WHEN 1 THEN RIT ELSE 0 END) AS RITPAGI , 
+                  SUM(CASE SHIFT WHEN 1 THEN BERAT ELSE 0 END) AS BRTPAGI , 
+                  SUM(CASE SHIFT WHEN 2 THEN RIT ELSE 0 END) AS RITSIANG , 
+                  SUM(CASE SHIFT WHEN 2 THEN BERAT ELSE 0 END) AS BRTSIANG , 
+                  SUM(CASE SHIFT WHEN 3 THEN RIT ELSE 0 END) AS RITMALAM , 
+                  SUM(CASE SHIFT WHEN 3 THEN BERAT ELSE 0 END) AS BRTMALAM , 
+                  SUM(RIT) AS RITTOT, 
+                  SUM(BERAT) AS BERATTOT 
+                FROM dbo.V_TAB_DIGILING_PERSHIFT  
+                GROUP BY HARI_GILING`);
 
       return data.recordset;
     } catch (e) {
@@ -334,7 +333,7 @@ class TimbanganService {
       FROM dbo.TAB_PEMASUKAN_TEBU INNER JOIN 
       dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN 
       dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA 
-      WHERE (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND not (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not  kw_netto IS NULL AND ditolak is null 
+      WHERE (NOT dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND not (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not  kw_netto IS NULL AND ditolak is null 
       ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
 
       return data.recordset;
@@ -343,7 +342,7 @@ class TimbanganService {
     }
   }
 
-  async getAntrianTruk() {
+  async getAntrianTrukSdhTimbang() {
     try {
       const data = await this._pool.request()
         .query(`SELECT dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK,
@@ -352,7 +351,26 @@ class TimbanganService {
                 FROM dbo.TAB_PEMASUKAN_TEBU INNER JOIN
                   dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN
                   dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA
-                WHERE (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not gross is null and  kw_netto IS NULL AND ditolak is null
+                WHERE (NOT dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) and not gross is null and  kw_netto IS NULL AND ditolak is null
+                ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
+
+      return data.recordset;
+    } catch (e) {
+      throw Boom.internal(e);
+    }
+  }
+
+  async getAntrianTrukBlmTimbang() {
+    try {
+      const data = await this._pool.request()
+        .query(`SELECT  TOP (100) PERCENT dbo.TAB_PEMASUKAN_TEBU.SPA, dbo.TAB_PEMASUKAN_TEBU.NO_TRUK, dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, dbo.TAB_REGISTER.KELOMPOK, 
+                        dbo.TAB_REGISTER.KEBUN, dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK, RIGHT(LEFT(dbo.TAB_PEMASUKAN_TEBU.ID_INDUK, 8), 3) AS ID_KTGR, DATEDIFF(hour, 
+                        dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK, GETDATE()) AS lamajam
+                FROM    dbo.TAB_PEMASUKAN_TEBU INNER JOIN
+                        dbo.TAB_REGISTER ON dbo.TAB_PEMASUKAN_TEBU.ID_INDUK = dbo.TAB_REGISTER.ID_INDUK INNER JOIN
+                        dbo.TAB_MASTER_SPA ON RIGHT(dbo.TAB_PEMASUKAN_TEBU.SPA, 7) = dbo.TAB_MASTER_SPA.SPA
+                WHERE   (dbo.TAB_PEMASUKAN_TEBU.HARI_GILING IS NULL) AND (dbo.TAB_PEMASUKAN_TEBU.NO_LORI IS NULL) AND (dbo.TAB_PEMASUKAN_TEBU.GROSS IS NULL) 
+                        --AND (dbo.TAB_PEMASUKAN_TEBU.KW_NETTO IS NULL) AND (dbo.TAB_MASTER_SPA.DITOLAK IS NULL)
                 ORDER BY dbo.TAB_PEMASUKAN_TEBU.TGL_MASUK`);
 
       return data.recordset;

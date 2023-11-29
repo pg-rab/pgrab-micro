@@ -132,8 +132,13 @@ class TimbanganHandler {
     return h.response(data);
   }
 
-  async getAntrianTrukHandler(request, h) {
-    const data = await this._service.getAntrianTruk();
+  async getAntrianTrukSdhTimbangHandler(request, h) {
+    const data = await this._service.getAntrianTrukSdhTimbang();
+    return h.response(data);
+  }
+
+  async getAntrianTrukBlmTimbangHandler(request, h) {
+    const data = await this._service.getAntrianTrukBlmTimbang();
     return h.response(data);
   }
 
