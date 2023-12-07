@@ -1,11 +1,11 @@
-const TimbanganHandler = require('./handler');
+const PengajuanLahanHandler = require('./handler');
 const routes = require('./routes');
 
 module.exports = {
-    name: 'timbangan',
+    name: 'pengajuan-lahan',
     version: '1.0.0',
     register: async (server, { service }) => {
-        const timbanganHandler = new TimbanganHandler(service);
-        server.route(routes(timbanganHandler));
+        const pengajuanLahanHandler = new PengajuanLahanHandler(service);
+        server.route(routes(pengajuanLahanHandler));
     },
 };

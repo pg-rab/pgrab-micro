@@ -3,14 +3,14 @@
 require("dotenv").config();
 const Hapi = require("@hapi/hapi");
 // const Jwt = require("@hapi/jwt");
-// const timbangan = require("./api");
-// const TimbanganService = require("./services/TimbanganService");
+const pengajuanLahan = require("./api");
+const PengajuanLahanService = require("./services/PengajuanLahanService");
 
 const init = async () => {
-  const timbanganService = new TimbanganService();
+  const pengajuanLahanService = new PengajuanLahanService();
 
   const server = Hapi.server({
-    port: process.env.PORT || 7001,
+    port: process.env.PORT || 7006,
     host: process.env.HOST,
     routes: {
       cors: {
@@ -42,12 +42,12 @@ const init = async () => {
   // });
 
   await server.register({
-    plugin: timbangan,
-    options: { service: timbanganService },
+    plugin: pengajuanLahan,
+    options: { service: pengajuanLahanService },
   });
 
   await server.start();
-  console.log(`Timbangan Service berjalan pada ${server.info.uri}`);
+  console.log(`Pengajuan Lahan Service berjalan pada ${server.info.uri}`);
 };
 
 init();
